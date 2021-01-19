@@ -31,10 +31,10 @@ def main():
 
 
     feeds = feedparser.parse(CONFIG['feed_url'])
-    last_delivered = DATA['last_delivered']
+    last_delivered = dateutil.parser.parse(DATA['last_delivered'])
 
     queue = []
-    for feed in feeds:
+    for feed in feeds.entries:
         feed_time = dateutil.parser.parse(feed['published'])
         if feed_time > last_delivered:
             feed['time'] = feed_time
@@ -43,8 +43,9 @@ def main():
     queue.sort(key=lambda x: x['time'])
     if queue:
         for feed in queue:
+            author = feed['authors'][0]
             message = f"*\\[GitHub Timeline\\]* {escape(feed['title'])}" \
-                      f" \\({escape(feed['author'])}, [link]({feed['link']})\\)"
+                      f" \\([{escape(author['name'])]({author['href']})}, [link]({feed['link']})\\)"
             bot.send_message(chat_id=CONFIG['chat_id'], text=message, parse_mode="MarkdownV2",
                              disable_web_page_preview=True)
         DATA['last_delivered'] = queue[-1]['time'].isoformat()
