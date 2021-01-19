@@ -15,7 +15,7 @@ def escape(s):
 
 def main():
     # Switch to script directory first
-    os.chdir(os.path.dirname(__file__))
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     with open("config.json", "r") as f:
         CONFIG = json.load(f)
@@ -45,7 +45,7 @@ def main():
         for feed in queue:
             author = feed['authors'][0]
             message = f"*\\[GitHub Timeline\\]* {escape(feed['title'])}" \
-                      f" \\([{escape(author['name'])]({author['href']})}, [link]({feed['link']})\\)"
+                      f" \\([{escape(author['name'])}]({author['href']}), [link]({feed['link']})\\)"
             bot.send_message(chat_id=CONFIG['chat_id'], text=message, parse_mode="MarkdownV2",
                              disable_web_page_preview=True)
         DATA['last_delivered'] = queue[-1]['time'].isoformat()
