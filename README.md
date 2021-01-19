@@ -1,3 +1,5 @@
-# TelegramBots
+# GitHub Feed
 
-My Telegram bots. Check out branches for different bots. This `master` branch serves as an "index".
+Deliver your GitHub feed straight to you!
+
+Use cron or other task scheduler to run this bot periodically.
