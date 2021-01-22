@@ -10,7 +10,7 @@ import telegram
 
 
 def escape(s):
-    return re.sub(r"""([][.+?^$(){}\-])""", r"\\\1", s)
+    return re.sub(r"""([][*_`.+?^$(){}\-])""", r"\\\1", s)
 
 
 def main():
