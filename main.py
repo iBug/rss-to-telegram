@@ -44,6 +44,8 @@ def main():
     if queue:
         for feed in queue:
             author = feed['authors'][0]
+            if author['name'] == "github-actions[bot]":
+                continue
             message = f"*\\[GitHub Timeline\\]* {escape(feed['title'])}" \
                       f" \\([link]({feed['link']})\\)"
             bot.send_message(chat_id=CONFIG['chat_id'], text=message, parse_mode="MarkdownV2",
