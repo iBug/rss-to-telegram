@@ -21,7 +21,6 @@ def main():
         CONFIG = json.load(f)
     bot = telegram.Bot(token=CONFIG['telegram_token'])
 
-
     DATA = {
         'last_delivered': dateutil.parser.parse("1970-01-01T00:00:00Z"),
     }
@@ -29,26 +28,30 @@ def main():
         with open("data.json", "r") as f:
             DATA = json.load(f)
 
-
-    feeds = feedparser.parse(CONFIG['feed_url'])
+    feed_list = CONFIG['feeds']
     last_delivered = dateutil.parser.parse(DATA['last_delivered'])
-
     queue = []
-    for feed in feeds.entries:
-        feed_time = dateutil.parser.parse(feed['published'])
-        if feed_time > last_delivered:
-            feed['time'] = feed_time
-            queue.append(feed)
 
-    queue.sort(key=lambda x: x['time'])
+    for item in feed_list:
+        feeds = feedparser.parse(item['url'])
+
+        for feed in feeds.entries:
+            feed_time = dateutil.parser.parse(feed['published'])
+            if feed_time > last_delivered:
+                feed['time'] = feed_time
+                queue.append((item['name'], feed))
+
+    queue.sort(key=lambda x: x[1]['time'])
     if queue:
-        for feed in queue:
+        for name, feed in queue:
             author = feed['authors'][0]
             if author['name'] == "github-actions[bot]":
                 continue
-            message = f"*\\[GitHub Timeline\\]* {escape(feed['title'])}" \
-                      f" \\([Link]({feed['link']})\\)"
-            bot.send_message(chat_id=CONFIG['chat_id'], text=message, parse_mode="MarkdownV2",
+            message = f"*\\[{escape(name)}\\]* {escape(feed['title'])}" \
+                      f" \\([{escape(author['name'])}]({feed['link']})\\)"
+            bot.send_message(chat_id=CONFIG['chat_id'],
+                             text=message,
+                             parse_mode="MarkdownV2",
                              disable_web_page_preview=True)
         DATA['last_delivered'] = queue[-1]['time'].isoformat()
 
