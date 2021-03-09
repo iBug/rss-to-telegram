@@ -54,7 +54,7 @@ def main():
                              parse_mode="MarkdownV2",
                              disable_web_page_preview=True)
             time.sleep(1)
-        DATA['last_delivered'] = queue[-1]['time'].isoformat()
+        DATA['last_delivered'] = queue[-1][1]['time'].isoformat()
 
     with open("data.json", "w") as f:
         json.dump(DATA, f, indent=2, ensure_ascii=False)
