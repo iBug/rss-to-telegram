@@ -47,7 +47,7 @@ def main():
             if author['name'] == "github-actions[bot]":
                 continue
             message = f"*\\[GitHub Timeline\\]* {escape(feed['title'])}" \
-                      f" \\([link]({feed['link']})\\)"
+                      f" \\([Link]({feed['link']})\\)"
             bot.send_message(chat_id=CONFIG['chat_id'], text=message, parse_mode="MarkdownV2",
                              disable_web_page_preview=True)
         DATA['last_delivered'] = queue[-1]['time'].isoformat()
