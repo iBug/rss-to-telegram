@@ -63,6 +63,7 @@ def main():
                 DATA['last_delivered'][name] = feed['time'].isoformat()
             time.sleep(1)
 
+    DATA['last_delivered'] = dict(DATA['last_delivered'])
     with open("data.json", "w") as f:
         json.dump(DATA, f, indent=2, ensure_ascii=False)
 
