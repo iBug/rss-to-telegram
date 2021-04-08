@@ -32,13 +32,14 @@ def main():
         with open("data.json", "r") as f:
             DATA = json.load(f)
             if isinstance(DATA['last_delivered'], str):
-                last_delivered = dateutil.parser.parse(DATA['last_delivered'])
-                DATA['last_delivered'] = defaultdict(lambda: last_delivered)
+                old_record = DATA['last_delivered']
+                DATA['last_delivered'] = defaultdict(lambda: old_record)
 
     feed_list = CONFIG['feeds']
     queue = []
 
     for item in feed_list:
+        last_delivered = dateutil.parser.parse(DATA['last_delivered'][item['name']])
         feeds = feedparser.parse(item['url'])
 
         for feed in feeds.entries:
