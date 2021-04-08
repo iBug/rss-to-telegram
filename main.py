@@ -14,7 +14,7 @@ EXCLUDE_AUTHORS = ["github-actions[bot]"]
 
 
 def escape(s):
-    return re.sub(r"""([][*_`.+?^$(){}\-])""", r"\\\1", s)
+    return re.sub(r"""([][#*_`.+?^$(){}\-])""", r"\\\1", s)
 
 
 def main():
