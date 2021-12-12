@@ -14,7 +14,7 @@ EXCLUDE_AUTHORS = ["github-actions[bot]"]
 
 
 def escape(s):
-    return re.sub(r"""([][#*_`.+?^$(){}\-])""", r"\\\1", s)
+    return telegram.utils.helpers.escape_markdown(s, 2)
 
 
 def main():
