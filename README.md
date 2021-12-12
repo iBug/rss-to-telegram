@@ -1,5 +1,5 @@
-# GitHub Feed
+# RSS to Telegram
 
-Deliver your GitHub feed straight to you!
+Deliver your favorite RSS feeds straight to you!
 
-Use cron or other task scheduler to run this bot periodically.
+Use cron or other task scheduler to run this tool periodically.
