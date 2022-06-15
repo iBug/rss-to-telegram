@@ -3,6 +3,7 @@ import dateutil.parser
 import json
 import os
 import re
+import sys
 import time
 from collections import defaultdict
 
@@ -54,15 +55,19 @@ def main():
             author = feed['authors'][0]
             if author['name'] in EXCLUDE_AUTHORS:
                 continue
-            message = f"*\\[{escape(name)}\\]* {escape(feed['title'])}" \
-                      f" \\([{escape(author['name'])}]({feed['link']})\\)"
-            bot.send_message(chat_id=CONFIG['chat_id'],
-                             text=message,
-                             parse_mode="MarkdownV2",
-                             disable_web_page_preview=True)
-            if dateutil.parser.parse(DATA['last_delivered'][name]) < feed['time']:
-                DATA['last_delivered'][name] = feed['time'].isoformat()
-            time.sleep(1)
+            try:
+                message = f"*\\[{escape(name)}\\]* {escape(feed['title'])}" \
+                          f" \\([{escape(author['name'])}]({feed['link']})\\)"
+                bot.send_message(chat_id=CONFIG['chat_id'],
+                                 text=message,
+                                 parse_mode="MarkdownV2",
+                                 disable_web_page_preview=True)
+                if dateutil.parser.parse(DATA['last_delivered'][name]) < feed['time']:
+                    DATA['last_delivered'][name] = feed['time'].isoformat()
+                time.sleep(1)
+            except Exception:
+                exc_type, exc_obj, _ = sys.exc_info()
+                print("{}: {}\n{}".format(exc_type.__name__, exc_obj), file=file)
 
     DATA['last_delivered'] = dict(DATA['last_delivered'])
     with open("data.json", "w") as f:
