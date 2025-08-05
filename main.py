@@ -4,6 +4,7 @@ import json
 import os
 import re
 import sys
+import threading
 import time
 from collections import defaultdict
 
@@ -12,10 +13,24 @@ import telegram
 
 
 EXCLUDE_AUTHORS = ["github-actions[bot]"]
+DEFAULT_TIME = "1970-01-01T00:00:00Z"
+NOW_S = datetime.datetime.now(datetime.UTC).isoformat()
 
 
 def escape(s):
     return telegram.utils.helpers.escape_markdown(s, 2)
+
+
+def fetch_feed(name, source, last_delivered, output):
+    feeds = feedparser.parse(source)
+
+    for feed in feeds.entries:
+        feed_time = dateutil.parser.parse(feed.get('published', feed.get('updated')))
+        if not feed_time.tzinfo:
+            feed_time = feed_time.replace(tzinfo=datetime.UTC)
+        if feed_time > last_delivered:
+            feed['time'] = feed_time
+            output.append((name, feed))
 
 
 def main():
@@ -27,32 +42,41 @@ def main():
     bot = telegram.Bot(token=CONFIG['telegram_token'])
 
     DATA = {
-        'last_delivered': defaultdict(lambda: dateutil.parser.parse("1970-01-01T00:00:00Z"))
+        'last_delivered': defaultdict(lambda: DEFAULT_TIME)
     }
     if os.path.isfile("data.json"):
         with open("data.json", "r") as f:
             DATA = json.load(f)
-            if isinstance(DATA['last_delivered'], str):
-                old_record = DATA['last_delivered']
+            old_record = DATA['last_delivered']
+            if isinstance(old_record, str):
                 DATA['last_delivered'] = defaultdict(lambda: old_record)
+            elif isinstance(old_record, dict):
+                DATA['last_delivered'] = defaultdict(lambda: DEFAULT_TIME, old_record)
+            else:
+                raise TypeError(f"Wrong type {DATA['last_delivered'].__class__} for last_delivered")
 
     feed_list = CONFIG['feeds']
     queue = []
+    threads = []
 
     for item in feed_list:
+        print(f"Working on {item['name']}")
         last_delivered = dateutil.parser.parse(DATA['last_delivered'][item['name']])
-        feeds = feedparser.parse(item['url'])
-
-        for feed in feeds.entries:
-            feed_time = dateutil.parser.parse(feed['published'])
-            if feed_time > last_delivered:
-                feed['time'] = feed_time
-                queue.append((item['name'], feed))
+        args = [item['name'], item['url'], last_delivered, queue]
+        if CONFIG.get('parallel_fetch'):
+            th = threading.Thread(target=fetch_feed, args=args)
+            th.start()
+            threads.append(th)
+        else:
+            fetch_feed(*args)
+    if CONFIG.get('parallel_fetch'):
+        for th in threads:
+            th.join()
 
     if queue:
         queue.sort(key=lambda x: x[1]['time'])
         for name, feed in queue:
-            author = feed['authors'][0]
+            author = feed.get('authors', [{'name': "None"}])[0]
             if author['name'] in EXCLUDE_AUTHORS:
                 continue
             try:
@@ -67,7 +91,7 @@ def main():
                 time.sleep(1)
             except Exception:
                 exc_type, exc_obj, _ = sys.exc_info()
-                print("{}: {}\n{}".format(exc_type.__name__, exc_obj), file=file)
+                print("{}: {}".format(exc_type.__name__, exc_obj))
 
     DATA['last_delivered'] = dict(DATA['last_delivered'])
     with open("data.json", "w") as f:
