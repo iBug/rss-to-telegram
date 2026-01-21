@@ -21,6 +21,14 @@ DEFAULT_TIME = "1970-01-01T00:00:00Z"
 NOW_S = datetime.datetime.now(datetime.UTC).isoformat()
 
 
+def setup_logging():
+    logging.basicConfig(
+        level=logging.INFO,
+        format='[%(asctime)s] %(levelname)s %(module)s - %(funcName)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+    )
+
+
 def escape(s):
     return telegram.utils.helpers.escape_markdown(s, 2)
 
@@ -40,6 +48,8 @@ def fetch_feed(name, source, last_delivered, output):
 
 
 def main():
+    setup_logging()
+
     # Switch to script directory first
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
