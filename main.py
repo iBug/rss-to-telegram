@@ -1,6 +1,7 @@
 import datetime
 import dateutil.parser
 import json
+import logging
 import os
 import re
 import sys
@@ -9,6 +10,7 @@ import time
 from collections import defaultdict
 
 import feedparser
+import requests
 import telegram
 
 
@@ -22,7 +24,9 @@ def escape(s):
 
 
 def fetch_feed(name, source, last_delivered, output):
-    feeds = feedparser.parse(source)
+    resp = requests.get(source, timeout=10)
+    resp.raise_for_status()
+    feeds = feedparser.parse(resp.text)
 
     for feed in feeds.entries:
         feed_time = dateutil.parser.parse(feed.get('published', feed.get('updated')))
@@ -60,7 +64,7 @@ def main():
     threads = []
 
     for item in feed_list:
-        print(f"Working on {item['name']}")
+        logging.info(f"Working on {item['name']}")
         last_delivered = dateutil.parser.parse(DATA['last_delivered'][item['name']])
         args = [item['name'], item['url'], last_delivered, queue]
         if CONFIG.get('parallel_fetch'):
@@ -68,7 +72,10 @@ def main():
             th.start()
             threads.append(th)
         else:
-            fetch_feed(*args)
+            try:
+                fetch_feed(*args)
+            except Exception as e:
+                logging.error(e, file=sys.stderr)
     if CONFIG.get('parallel_fetch'):
         for th in threads:
             th.join()
@@ -91,7 +98,7 @@ def main():
                 time.sleep(1)
             except Exception:
                 exc_type, exc_obj, _ = sys.exc_info()
-                print("{}: {}".format(exc_type.__name__, exc_obj))
+                logging.error("{}: {}".format(exc_type.__name__, exc_obj))
 
     DATA['last_delivered'] = dict(DATA['last_delivered'])
     with open("data.json", "w") as f:

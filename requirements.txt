@@ -1,5 +1,6 @@
 feedparser
 python-dateutil
 python-telegram-bot~=13.15
+PyYAML~=6.0
 requests
 urllib3~=1.26
