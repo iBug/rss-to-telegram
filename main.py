@@ -34,17 +34,21 @@ def escape(s):
 
 
 def fetch_feed(name, source, last_delivered, output):
-    resp = requests.get(source, timeout=10)
-    resp.raise_for_status()
-    feeds = feedparser.parse(resp.text)
+    try:
+        resp = requests.get(source, timeout=10)
+        resp.raise_for_status()
+        feeds = feedparser.parse(resp.text)
 
-    for feed in feeds.entries:
-        feed_time = dateutil.parser.parse(feed.get('published', feed.get('updated')))
-        if not feed_time.tzinfo:
-            feed_time = feed_time.replace(tzinfo=datetime.UTC)
-        if feed_time > last_delivered:
-            feed['time'] = feed_time
-            output.append((name, feed))
+        for feed in feeds.entries:
+            feed_time = dateutil.parser.parse(feed.get('published', feed.get('updated')))
+            if not feed_time.tzinfo:
+                feed_time = feed_time.replace(tzinfo=datetime.UTC)
+            if feed_time > last_delivered:
+                feed['time'] = feed_time
+                output.append((name, feed))
+    except Exception:
+        exc_type, exc_obj, _ = sys.exc_info()
+        logging.error("{}: {}".format(exc_type.__name__, exc_obj))
 
 
 def main():
@@ -84,10 +88,7 @@ def main():
             th.start()
             threads.append(th)
         else:
-            try:
-                fetch_feed(*args)
-            except Exception as e:
-                logging.error(e, file=sys.stderr)
+            fetch_feed(*args)
     if CONFIG.get('parallel_fetch'):
         for th in threads:
             th.join()
@@ -99,8 +100,8 @@ def main():
             if author['name'] in EXCLUDE_AUTHORS:
                 continue
             try:
-                message = f"*\\[{escape(name)}\\]* {escape(feed['title'])}" \
-                          f" \\([{escape(author['name'])}]({feed['link']})\\)"
+                message = f"[*\\[{escape(name)}\\]*]({feed['link']}) {escape(feed['title'])}" \
+                          f" \\(by _{escape(author['name'])}_\\)"
                 bot.send_message(chat_id=CONFIG['chat_id'],
                                  text=message,
                                  parse_mode="MarkdownV2",
