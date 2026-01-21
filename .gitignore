@@ -1,6 +1,10 @@
 # Data and config files
 config.json
+config.yaml
+config.yml
 data.json
+data.yaml
+data.yml
 
 
 # Byte-compiled / optimized / DLL files

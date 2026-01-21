@@ -1,6 +1,5 @@
 import datetime
 import dateutil.parser
-import json
 import logging
 import os
 import re
@@ -12,8 +11,11 @@ from collections import defaultdict
 import feedparser
 import requests
 import telegram
+import yaml
 
 
+CONFIG_FILE = "config.yaml"
+DATA_FILE = "data.yaml"
 EXCLUDE_AUTHORS = ["github-actions[bot]"]
 DEFAULT_TIME = "1970-01-01T00:00:00Z"
 NOW_S = datetime.datetime.now(datetime.UTC).isoformat()
@@ -41,16 +43,16 @@ def main():
     # Switch to script directory first
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-    with open("config.json", "r") as f:
-        CONFIG = json.load(f)
+    with open(CONFIG_FILE, "r") as f:
+        CONFIG = yaml.safe_load(f)
     bot = telegram.Bot(token=CONFIG['telegram_token'])
 
     DATA = {
         'last_delivered': defaultdict(lambda: DEFAULT_TIME)
     }
-    if os.path.isfile("data.json"):
-        with open("data.json", "r") as f:
-            DATA = json.load(f)
+    if os.path.isfile(DATA_FILE):
+        with open(DATA_FILE, "r") as f:
+            DATA = yaml.safe_load(f)
             old_record = DATA['last_delivered']
             if isinstance(old_record, str):
                 DATA['last_delivered'] = defaultdict(lambda: old_record)
@@ -101,8 +103,8 @@ def main():
                 logging.error("{}: {}".format(exc_type.__name__, exc_obj))
 
     DATA['last_delivered'] = dict(DATA['last_delivered'])
-    with open("data.json", "w") as f:
-        json.dump(DATA, f, indent=2, ensure_ascii=False)
+    with open(DATA_FILE, "w") as f:
+        yaml.dump(DATA, f, indent=2, default_flow_style=False)
 
 
 if __name__ == '__main__':
